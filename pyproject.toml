@@ -1,0 +1,15 @@
+[project]
+name = "motherduck-dives-flights-pipeline"
+version = "0.1.0"
+description = "Extracts dive and flight data and loads it into MotherDuck via DuckDB."
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "duckdb>=1.0.0",
+    "pandas>=2.0.0",
+    "requests>=2.31.0",
+    "python-dotenv>=1.0.0",
+]
+
+[tool.uv]
+package = false
