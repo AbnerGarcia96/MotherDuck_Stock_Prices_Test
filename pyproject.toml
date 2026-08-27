@@ -1,14 +1,11 @@
 [project]
-name = "motherduck-dives-flights-pipeline"
+name = "motherduck-marketstack"
 version = "0.1.0"
-description = "Extracts dive and flight data and loads it into MotherDuck via DuckDB."
+description = "AAPL EOD data processed on MotherDuck via Flights and visualized via a Dive."
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "duckdb>=1.0.0",
-    "pandas>=2.0.0",
-    "requests>=2.31.0",
-    "python-dotenv>=1.0.0",
 ]
 
 [tool.uv]

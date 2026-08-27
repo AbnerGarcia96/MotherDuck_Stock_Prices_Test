@@ -15,6 +15,6 @@
       }
     }
   },
-  "postCreateCommand": "uv sync && duckdb --version && uv run python -c \"import duckdb, pandas, requests, dotenv; print('duckdb', duckdb.__version__); print('pandas', pandas.__version__)\"",
+  "postCreateCommand": "uv sync && duckdb --version && uv run python -c \"import duckdb; print('duckdb', duckdb.__version__)\"",
   "remoteUser": "vscode"
 }

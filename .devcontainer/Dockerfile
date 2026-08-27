@@ -10,9 +10,9 @@ RUN apt-get update \
     && apt-get install -y --no-install-recommends unzip make \
     && rm -rf /var/lib/apt/lists/*
 
-# uv - fast Python package manager. Project dependencies (duckdb, pandas,
-# requests, python-dotenv) are installed via `uv sync` against
-# pyproject.toml/uv.lock - see devcontainer.json's postCreateCommand.
+# uv - fast Python package manager. Project dependencies (duckdb) are
+# installed via `uv sync` against pyproject.toml/uv.lock - see
+# devcontainer.json's postCreateCommand.
 RUN pip install --no-cache-dir uv
 
 # DuckDB CLI binary

@@ -170,7 +170,7 @@ export default function AaplSnapshotDive() {
 									color: totalChangePct >= 0 ? POSITIVE : NEGATIVE,
 								}}
 							>
-								{hasRows ? `${fmtPct(totalChangePct)} over period` : ' '}
+								{hasRows ? `${fmtPct(totalChangePct)} over period` : ' '}
 							</p>
 						</div>
 						<div>
