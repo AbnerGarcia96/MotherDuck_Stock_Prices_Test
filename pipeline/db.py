@@ -22,10 +22,11 @@ def get_connection(database: str | None = None) -> duckdb.DuckDBPyConnection:
             "in your token, and make sure it's loaded (run_*.py scripts do "
             "this via python-dotenv) before calling get_connection()."
         )
-    db_name = database or os.environ.get("MOTHERDUCK_DATABASE", "dives_and_flights")
+    db_name = database or os.environ.get("MOTHERDUCK_DATABASE", "marketstack_test")
     return duckdb.connect(f"md:{db_name}")
 
 
 def ensure_schema(con: duckdb.DuckDBPyConnection) -> None:
-    """Create the flights/dives tables if they don't already exist."""
+    """Create the bronze/silver/gold marketstack schemas and tables if they
+    don't already exist."""
     con.execute(SCHEMA_PATH.read_text())

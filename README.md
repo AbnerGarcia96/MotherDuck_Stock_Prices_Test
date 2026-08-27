@@ -1,42 +1,47 @@
-# Dives & Flights → MotherDuck Pipeline
+# Marketstack → MotherDuck Pipeline
 
-A small extract/transform/load pipeline that pulls flight and dive data
-from external APIs and loads it into a [MotherDuck](https://motherduck.com/)
-database using [DuckDB](https://duckdb.org/). Managed with
+A small Bronze/Silver/Gold extract/transform/load pipeline that pulls AAPL
+end-of-day price data from [marketstack](https://marketstack.com/) (via
+apilayer) and loads it into a [MotherDuck](https://motherduck.com/) database
+using [DuckDB](https://duckdb.org/). Managed with
 [uv](https://docs.astral.sh/uv/).
 
 ## Layout
 
 ```
 pipeline/
-  db.py             # MotherDuck connection + schema setup
-  schema.sql        # flights / dives table definitions
+  db.py                       # MotherDuck connection + schema setup
+  schema.sql                  # bronze / silver / gold table definitions
   extract/
-    flights.py      # AviationStack (free tier) client
-    dives.py        # generic REST API placeholder - point at your source
+    marketstack.py            # marketstack (via apilayer) EOD client
   transform/
-    flights.py      # raw API JSON -> flights DataFrame
-    dives.py        # raw API JSON -> dives DataFrame
+    marketstack.py            # raw API JSON -> bronze/silver DataFrames
   load/
-    loader.py        # generic upsert: DataFrame -> MotherDuck table
-  run_flights.py    # extract -> transform -> load, flights
-  run_dives.py      # extract -> transform -> load, dives
-  run_all.py        # runs both
+    bronze.py                 # append-only loader for the Bronze layer
+    loader.py                 # generic upsert: DataFrame -> MotherDuck table
+  gold/
+    aapl_daily_returns.sql    # Gold mart: day-over-day AAPL price change
+  run_marketstack_bronze.py   # extract -> load, raw EOD pages into Bronze
+  run_marketstack_silver.py   # dedupe/type Bronze into Silver
+  run_marketstack_gold.py     # recompute the Gold mart from Silver
+  run_all.py                  # runs bronze -> silver -> gold in sequence
 ```
+
+The same bronze/silver/gold logic also runs as three on-demand MotherDuck
+Flights (`marketstack-bronze`, `marketstack-silver`, `marketstack-gold`), so
+it can be scheduled or triggered from MotherDuck compute instead of running
+locally.
 
 ## Setup
 
 1. Copy `.env.example` to `.env` and fill in:
    - `MOTHERDUCK_TOKEN` - from MotherDuck (Settings → Access Tokens).
-   - `MOTHERDUCK_DATABASE` - defaults to `dives_and_flights`.
-   - `AVIATIONSTACK_API_KEY` - a free key from
-     [aviationstack.com/signup/free](https://aviationstack.com/signup/free).
-     Free tier notes: HTTP only (not HTTPS), limited monthly quota,
-     real-time/recent flights only (see `pipeline/extract/flights.py`).
-   - `DIVE_API_BASE_URL` / `DIVE_API_KEY` - point these at your actual
-     dive-log source. The dive extractor/transformer are placeholders;
-     adjust `pipeline/extract/dives.py` and `pipeline/transform/dives.py`
-     to match your API's real request/response shape.
+   - `MOTHERDUCK_DATABASE` - defaults to `marketstack_test`.
+   - `API_URL` - the full marketstack `/v2/eod` endpoint, e.g.
+     `https://api.apilayer.net/marketstack/v2/eod`.
+   - `API_ACCESS_KEY` - your apilayer access key. Sign up at
+     [marketstack.com](https://marketstack.com/) and get a key from your
+     apilayer dashboard.
 
 2. Install dependencies:
    ```
@@ -46,15 +51,19 @@ pipeline/
 ## Running
 
 ```
-uv run python -m pipeline.run_flights
-uv run python -m pipeline.run_flights --dep-iata JFK --flight-date 2026-08-20
-uv run python -m pipeline.run_dives
+uv run python -m pipeline.run_marketstack_bronze
+uv run python -m pipeline.run_marketstack_bronze --symbol AAPL --date-from 2026-01-01 --date-to 2026-08-26
+uv run python -m pipeline.run_marketstack_silver
+uv run python -m pipeline.run_marketstack_gold
 uv run python -m pipeline.run_all
 ```
 
+Or via `make`: `make run-marketstack-all` (or the individual
+`run-marketstack-bronze` / `-silver` / `-gold` targets).
+
 Tables are created automatically on first run (see `pipeline/schema.sql`).
-Re-running a script upserts by `flight_id`/`dive_id`, so it's safe to run
-repeatedly (e.g. on a schedule) without creating duplicate rows.
+Bronze is append-only and safe to re-run; Silver upserts by
+`(symbol, trade_date)`; Gold is fully recomputed from Silver each run.
 
 ## Devcontainer
 

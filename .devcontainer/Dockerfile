@@ -4,9 +4,10 @@ FROM mcr.microsoft.com/devcontainers/python:1-3.12-bullseye
 # which breaks `apt-get update`. We don't need Node/Yarn, so drop it.
 RUN rm -f /etc/apt/sources.list.d/yarn.list
 
-# System deps needed to fetch/unpack the DuckDB CLI
+# System deps needed to fetch/unpack the DuckDB CLI, plus make for the
+# project Makefile
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends unzip \
+    && apt-get install -y --no-install-recommends unzip make \
     && rm -rf /var/lib/apt/lists/*
 
 # uv - fast Python package manager. Project dependencies (duckdb, pandas,

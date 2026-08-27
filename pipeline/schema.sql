@@ -1,36 +1,59 @@
--- Schema for the dives_and_flights MotherDuck database.
+-- Schema for the marketstack MotherDuck database.
 -- Applied via pipeline.db.ensure_schema() before every load.
 
-CREATE TABLE IF NOT EXISTS flights (
-    flight_id VARCHAR PRIMARY KEY,   -- synthetic key, see transform/flights.py
-    flight_date DATE,
-    flight_status VARCHAR,
-    airline_name VARCHAR,
-    airline_iata VARCHAR,
-    flight_number VARCHAR,
-    flight_iata VARCHAR,
-    dep_airport VARCHAR,
-    dep_iata VARCHAR,
-    dep_scheduled TIMESTAMP,
-    dep_actual TIMESTAMP,
-    arr_airport VARCHAR,
-    arr_iata VARCHAR,
-    arr_scheduled TIMESTAMP,
-    arr_actual TIMESTAMP,
-    aircraft_registration VARCHAR,
-    ingested_at TIMESTAMP DEFAULT now()
+-- Bronze layer: raw, append-only landing tables. One row per record as
+-- returned by the source API, with ingestion metadata. Never upserted or
+-- deduped - see pipeline/load/bronze.py - so later Silver/Gold layers can
+-- be re-derived without re-hitting a rate-limited API.
+CREATE SCHEMA IF NOT EXISTS bronze;
+
+CREATE TABLE IF NOT EXISTS bronze.aapl_eod_raw (
+    symbol VARCHAR,
+    trade_date DATE,
+    raw VARCHAR,              -- full JSON record as returned by marketstack, as text
+    request_date_from DATE,
+    request_date_to DATE,
+    request_offset INTEGER,
+    loaded_at TIMESTAMP DEFAULT now()
 );
 
-CREATE TABLE IF NOT EXISTS dives (
-    dive_id VARCHAR PRIMARY KEY,     -- from the source API, see transform/dives.py
-    dive_date DATE,
-    dive_site VARCHAR,
-    location VARCHAR,
-    max_depth_m DOUBLE,
-    duration_min DOUBLE,
-    water_temp_c DOUBLE,
-    visibility_m DOUBLE,
-    buddy VARCHAR,
-    notes VARCHAR,
-    ingested_at TIMESTAMP DEFAULT now()
+-- Silver layer: cleaned, typed, deduped. One row per (symbol, trade_date),
+-- upserted from the latest matching Bronze row - see
+-- pipeline/run_marketstack_silver.py.
+CREATE SCHEMA IF NOT EXISTS silver;
+
+CREATE TABLE IF NOT EXISTS silver.aapl_eod (
+    symbol VARCHAR,
+    trade_date DATE,
+    open DOUBLE,
+    high DOUBLE,
+    low DOUBLE,
+    close DOUBLE,
+    volume DOUBLE,
+    adj_open DOUBLE,
+    adj_high DOUBLE,
+    adj_low DOUBLE,
+    adj_close DOUBLE,
+    adj_volume DOUBLE,
+    split_factor DOUBLE,
+    dividend DOUBLE,
+    exchange VARCHAR,
+    exchange_code VARCHAR,
+    price_currency VARCHAR,
+    silvered_at TIMESTAMP DEFAULT now(),
+    PRIMARY KEY (symbol, trade_date)
+);
+
+-- Gold layer: business-level marts, fully recomputed from Silver on each
+-- run - see pipeline/gold/aapl_daily_returns.sql.
+CREATE SCHEMA IF NOT EXISTS gold;
+
+CREATE TABLE IF NOT EXISTS gold.aapl_daily_returns (
+    symbol VARCHAR,
+    trade_date DATE,
+    close DOUBLE,
+    prior_close DOUBLE,
+    daily_return_pct DOUBLE,
+    volume DOUBLE,
+    PRIMARY KEY (symbol, trade_date)
 );
