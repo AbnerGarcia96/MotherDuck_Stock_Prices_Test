@@ -1,0 +1,12 @@
+{
+  "flight_id": "f1a1b924-b71c-466b-bbb7-8372b7799532",
+  "name": "marketstack-dbt",
+  "schedule_cron": null,
+  "config": {},
+  "access_token_name": "MotherDuck Flights",
+  "flight_secret_names": [],
+  "max_runtime_sec": 28800,
+  "owner_name": "abnerjosgarfer",
+  "current_version": 4,
+  "status": "ACTIVE"
+}

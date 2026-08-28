@@ -1,12 +1,8 @@
 """MotherDuck Flight: ingest marketstack AAPL EOD data into the Bronze layer.
 
-Self-contained single-file job (a Flight can't import a local Python
-package, so the extract/transform/load steps are all inlined here).
-
-This is a local copy of the source currently saved to MotherDuck as the
-"marketstack-bronze" Flight (flight_id 3100db19-37d5-4d42-852e-f07888f4129c).
-Edit here, then push changes with:
-    update_flight(id="3100db19-37d5-4d42-852e-f07888f4129c", source_code=...)
+Single-file mirror of pipeline/run_marketstack_bronze.py from the
+MotherDuck_Test repo (Flights can't import a local Python package, so the
+extract/transform/load helpers are inlined here).
 
 Config:
     API_URL     - full marketstack /v2/eod endpoint (non-secret)

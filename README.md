@@ -50,6 +50,27 @@ MCP tool/API. There's no local `uv run` step anymore; everything executes
 on MotherDuck compute — `marketstack-dbt` runs `dbt build` on MotherDuck
 compute the same way, not from CI or a laptop.
 
+## Deploying
+
+Deployment is manual, not CI/CD — there's no pipeline in this repo. Each
+Flight/Dive folder carries a `metadata.json` (id, owner, current version,
+plus its own config) alongside its content, and `scripts/deploy/` has one
+script per direction:
+
+| Command | Does |
+|---|---|
+| `make deploy-flights` | Push `Flights/*/main.py` to MotherDuck (create if `flight_id` is empty, otherwise update only what changed) |
+| `make deploy-dives` | Push `Dives/*.tsx` to MotherDuck (same create-or-update logic) |
+| `make download-flights` | Pull each tracked Flight's current version back into its folder |
+| `make download-dives` | Pull each tracked Dive's current content back into its folder |
+
+Setup: `cp .env.example .env` and fill in `MOTHERDUCK_TOKEN` (a personal
+token to try things out; a `prod_service_account` token for a real
+deploy). Both deploy scripts refuse to touch anything not owned by that
+token's account, and are no-ops when nothing actually changed. Add
+`--dry-run` to either (`uv run python scripts/deploy/deploy_flights.py --dry-run`)
+to see what would happen without touching MotherDuck.
+
 ## Devcontainer
 
 This project also has a `.devcontainer/` setup (Python, `uv`, and the

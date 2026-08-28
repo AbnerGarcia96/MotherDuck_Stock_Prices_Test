@@ -1,0 +1,8 @@
+{
+  "dive_id": "a7e0efa2-9aa3-4d37-801d-f54f68c1399b",
+  "title": "AAPL EOD Snapshot",
+  "description": "Daily closing price, volume, and return observations for AAPL from the gold.aapl_daily_returns table.",
+  "status": "draft",
+  "owner_name": "abnerjosgarfer",
+  "current_version": 3
+}

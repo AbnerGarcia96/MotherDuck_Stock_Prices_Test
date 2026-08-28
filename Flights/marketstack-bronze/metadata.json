@@ -1,0 +1,16 @@
+{
+  "flight_id": "3100db19-37d5-4d42-852e-f07888f4129c",
+  "name": "marketstack-bronze",
+  "schedule_cron": null,
+  "config": {
+    "API_URL": "https://api.apilayer.net/marketstack/v2/eod"
+  },
+  "access_token_name": "MotherDuck Flights",
+  "flight_secret_names": [
+    "api_secreta"
+  ],
+  "max_runtime_sec": 28800,
+  "owner_name": "abnerjosgarfer",
+  "current_version": 3,
+  "status": "ACTIVE"
+}

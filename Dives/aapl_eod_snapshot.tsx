@@ -1,4 +1,4 @@
-import { useSQLQuery } from '@motherduck/react-sql-query';
+import { useDiveState, useSQLQuery } from '@motherduck/react-sql-query';
 import {
 	Area,
 	AreaChart,
@@ -59,12 +59,48 @@ export default function AaplSnapshotDive() {
   `);
 
 	const raw = Array.isArray(rowsQuery.data) ? rowsQuery.data : [];
-	const rows = raw.map((r) => ({
+	const allRows = raw.map((r) => ({
 		date: String(r.trade_date),
 		close: N(r.close),
 		return_pct: r.daily_return_pct == null ? null : N(r.daily_return_pct),
 		volume: N(r.volume),
 	}));
+
+	// Full available period, used as the date-picker bounds and as the
+	// implicit range when the viewer hasn't narrowed it.
+	const fullRange = allRows.length
+		? { min: allRows[0].date, max: allRows[allRows.length - 1].date }
+		: null;
+
+	const [dateFrom, setDateFrom] = useDiveState<string>('dateFrom', '');
+	const [dateTo, setDateTo] = useDiveState<string>('dateTo', '');
+	const effectiveFrom = dateFrom || fullRange?.min || '';
+	const effectiveTo = dateTo || fullRange?.max || '';
+	const isFiltered = Boolean(dateFrom || dateTo);
+
+	// Quick preset ranges, anchored to the latest available trading day
+	// rather than "today" (marketstack data can lag by a day or more).
+	const clampToRange = (d: string) => (fullRange && d < fullRange.min ? fullRange.min : d);
+	const shiftDays = (dateStr: string, days: number) => {
+		const d = new Date(`${dateStr}T00:00:00Z`);
+		d.setUTCDate(d.getUTCDate() + days);
+		return d.toISOString().slice(0, 10);
+	};
+	const presets = fullRange
+		? [
+				{ label: '7D', from: clampToRange(shiftDays(fullRange.max, -7)) },
+				{ label: '1M', from: clampToRange(shiftDays(fullRange.max, -30)) },
+				{ label: '3M', from: clampToRange(shiftDays(fullRange.max, -90)) },
+				{ label: 'YTD', from: clampToRange(`${fullRange.max.slice(0, 4)}-01-01`) },
+				{ label: 'All', from: fullRange.min },
+			]
+		: [];
+
+	const rows = allRows.filter(
+		(r) =>
+			(!effectiveFrom || r.date >= effectiveFrom) &&
+			(!effectiveTo || r.date <= effectiveTo),
+	);
 
 	const hasRows = rows.length > 0;
 	const first = hasRows ? rows[0] : null;
@@ -125,6 +161,64 @@ export default function AaplSnapshotDive() {
 						Daily closes and volume from marketstack EOD, gold
 						layer
 					</p>
+				</div>
+
+				<div className="flex flex-col items-end gap-2">
+					<div className="flex gap-1">
+						{presets.map((preset) => {
+							const active =
+								effectiveFrom === preset.from &&
+								effectiveTo === (fullRange?.max ?? '');
+							return (
+								<button
+									key={preset.label}
+									type="button"
+									onClick={() => {
+										setDateFrom(
+											preset.from === fullRange?.min
+												? undefined
+												: preset.from,
+										);
+										setDateTo(undefined);
+									}}
+									className="rounded px-2.5 py-1 text-xs font-medium"
+									style={{
+										background: active ? PRIMARY : '#e9eef2',
+										color: active ? '#fff' : TEXT,
+									}}
+								>
+									{preset.label}
+								</button>
+							);
+						})}
+					</div>
+					<div className="flex items-center gap-1.5">
+						<input
+							type="date"
+							aria-label="Custom range start"
+							value={effectiveFrom}
+							min={fullRange?.min}
+							max={effectiveTo || fullRange?.max}
+							disabled={!fullRange}
+							onChange={(e) => setDateFrom(e.target.value)}
+							className="rounded border px-2 py-1 text-xs"
+							style={{ borderColor: '#ddd', color: TEXT }}
+						/>
+						<span className="text-xs" style={{ color: MUTED }}>
+							–
+						</span>
+						<input
+							type="date"
+							aria-label="Custom range end"
+							value={effectiveTo}
+							min={effectiveFrom || fullRange?.min}
+							max={fullRange?.max}
+							disabled={!fullRange}
+							onChange={(e) => setDateTo(e.target.value)}
+							className="rounded border px-2 py-1 text-xs"
+							style={{ borderColor: '#ddd', color: TEXT }}
+						/>
+					</div>
 				</div>
 			</div>
 
@@ -336,6 +430,11 @@ export default function AaplSnapshotDive() {
 								<div className="h-4 w-3/4 rounded bg-gray-200" />
 								<div className="h-4 w-1/2 rounded bg-gray-200" />
 							</div>
+						) : !hasRows && isFiltered ? (
+							<p className="text-sm" style={{ color: MUTED }}>
+								No trading sessions in the selected date
+								range.
+							</p>
 						) : (
 							<ul
 								className="list-disc space-y-1 pl-5 text-sm"
