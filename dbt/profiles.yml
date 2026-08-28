@@ -1,0 +1,11 @@
+marketstack:
+  target: dev
+  outputs:
+    dev:
+      type: duckdb
+      path: "md:marketstack_test"
+      # Local runs need a MotherDuck token; a Flight's `md:` connection is
+      # already authenticated as the Flight's identity and needs nothing.
+      extensions:
+        - httpfs
+        - json

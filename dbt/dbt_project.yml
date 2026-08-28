@@ -1,0 +1,22 @@
+name: marketstack
+version: "1.0.0"
+config-version: 2
+
+profile: marketstack
+
+model-paths: ["models"]
+target-path: "target"
+clean-targets: ["target", "dbt_packages"]
+
+models:
+  marketstack:
+    silver_aapl_eod:
+      +schema: silver
+      +alias: aapl_eod
+      +materialized: incremental
+      +incremental_strategy: delete+insert
+      +unique_key: ["symbol", "trade_date"]
+    gold_aapl_daily_returns:
+      +schema: gold
+      +alias: aapl_daily_returns
+      +materialized: table

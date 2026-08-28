@@ -1,0 +1,20 @@
+version: 2
+
+sources:
+  - name: bronze
+    schema: bronze
+    tables:
+      - name: aapl_eod_raw
+        description: >
+          Raw marketstack EOD API pages, appended by the marketstack-bronze
+          Flight. One row per (symbol, trade_date, request_offset) page;
+          silver dedupes to the latest load per (symbol, trade_date).
+        columns:
+          - name: symbol
+            tests: [not_null]
+          - name: trade_date
+            tests: [not_null]
+          - name: raw
+            description: Raw JSON record from the marketstack API, as text.
+          - name: loaded_at
+            description: When this bronze row was appended.

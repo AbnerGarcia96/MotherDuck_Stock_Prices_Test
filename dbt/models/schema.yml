@@ -1,0 +1,35 @@
+version: 2
+
+models:
+  - name: silver_aapl_eod
+    description: >
+      Deduped, typed AAPL EOD price data — one row per (symbol, trade_date).
+    columns:
+      - name: symbol
+        tests: [not_null]
+      - name: trade_date
+        tests: [not_null]
+      - name: close
+        description: >
+          Occasionally null upstream (marketstack itself returns
+          close: null for a handful of dates) — warn rather than fail the
+          build, matching the old Flights, which carried these nulls
+          through silently with no test at all.
+        tests:
+          - not_null:
+              config:
+                severity: warn
+
+  - name: gold_aapl_daily_returns
+    description: >
+      Day-over-day AAPL price change, recomputed from silver_aapl_eod.
+    columns:
+      - name: symbol
+        tests: [not_null]
+      - name: trade_date
+        tests: [not_null]
+      - name: close
+        tests:
+          - not_null:
+              config:
+                severity: warn
