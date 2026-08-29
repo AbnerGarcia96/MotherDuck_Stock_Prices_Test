@@ -4,5 +4,5 @@
   "description": "Daily closing price, volume, and return observations for AAPL from the gold.aapl_daily_returns table.",
   "status": "draft",
   "owner_name": "abnerjosgarfer",
-  "current_version": 3
+  "current_version": 5
 }
