@@ -19,20 +19,26 @@ work, each a single-file Python job running on MotherDuck compute:
 
 | Flight | Does |
 |---|---|
-| `marketstack-bronze` | Fetches raw EOD pages from marketstack, appends into `bronze.aapl_eod_raw` |
+| `marketstack-bronze` | Uses [dlt](https://dlthub.com/) to fetch raw EOD pages from marketstack, appends into `bronze.aapl_eod_raw` |
 | `marketstack-dbt` | Runs `dbt build` (the [`dbt/`](dbt) project) to produce `silver.aapl_eod` and `gold.aapl_daily_returns` from Bronze |
 
 Silver and gold are pure SQL transforms, so they're modeled in
 [`dbt/`](dbt) — named models, `ref()`/`source()` lineage, and schema
 tests — rather than hand-rolled as inline SQL strings. Bronze stays a
 Flight since it makes a live marketstack API call, which isn't something
-dbt can express as a model. To change a transform, edit `dbt/`, not
-`Flights/marketstack-dbt/main.py` directly — see [Flights/README.md](Flights/README.md)
-for how that Flight's source is generated from `dbt/`.
+dbt can express as a model; it uses dlt (a Python extract/load library)
+for the pagination and MotherDuck-write plumbing instead, appending every
+fetched row (`write_disposition="append"`) rather than deduping at
+ingestion time — dedup happens downstream in `silver_aapl_eod`. To change
+a transform, edit `dbt/`, not `Flights/marketstack-dbt/main.py` directly —
+see [Flights/README.md](Flights/README.md) for how that Flight's source is
+generated from `dbt/`.
 
 All write to the `marketstack_test` MotherDuck database. See
 [Flights/README.md](Flights/README.md) for Flight IDs and how to push local
 edits back to MotherDuck.
+
+![Flight run in the MotherDuck UI](img/flight_screenshot.png)
 
 ### Dives
 
@@ -41,6 +47,8 @@ edits back to MotherDuck.
 chart, volume chart, observations) reading live from
 `gold.aapl_daily_returns`. See [Dives/README.md](Dives/README.md) for the
 live URL and how to push local edits back to MotherDuck.
+
+![AAPL EOD Snapshot Dive](img/dive_screenshot.png)
 
 ## Running
 
@@ -70,6 +78,8 @@ deploy). Both deploy scripts refuse to touch anything not owned by that
 token's account, and are no-ops when nothing actually changed. Add
 `--dry-run` to either (`uv run python scripts/deploy/deploy_flights.py --dry-run`)
 to see what would happen without touching MotherDuck.
+
+![marketstack_test database in MotherDuck](img/database_screenshot.png)
 
 ## Devcontainer
 
